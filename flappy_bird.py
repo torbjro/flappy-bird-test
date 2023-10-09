@@ -21,21 +21,21 @@ class Bird(pygame.sprite.Sprite):
     """
     class for the bird
     """
-    def __init__(self):
+    def __init__(self, color):
         """
         initializing bird with images, speed and rectangel around bird
         """
         # init sprite
         pygame.sprite.Sprite.__init__(self)
         # loading images for upflap, midflap and downflap
-        self.images =  [pygame.image.load('flappy-bird-test/images/bluebird-upflap.png').convert_alpha(),
-                        pygame.image.load('flappy-bird-test/images/bluebird-midflap.png').convert_alpha(),
-                        pygame.image.load('flappy-bird-test/images/bluebird-downflap.png').convert_alpha()]
+        self.images =  [pygame.image.load(f'images/{color}bird-upflap.png').convert_alpha(),
+                        pygame.image.load(f'images/{color}bird-midflap.png').convert_alpha(),
+                        pygame.image.load(f'images/{color}bird-downflap.png').convert_alpha()]
         # setting speed
         self.speed = SPEED
         # start image
         self.current_image = 0
-        self.image = pygame.image.load('flappy-bird-test/images/bluebird-upflap.png').convert_alpha()
+        self.image = pygame.image.load(f'images/{color}bird-upflap.png').convert_alpha()
         self.mask = pygame.mask.from_surface(self.image)
         # initialize rectangel
         self.rect = self.image.get_rect()
@@ -68,10 +68,10 @@ class Pipe(pygame.sprite.Sprite):
     """
     class for the pipes
     """
-    def __init__(self, inverted, xpos, ysize):
+    def __init__(self, inverted, xpos, ysize, color):
         pygame.sprite.Sprite.__init__(self)
         # loading image of pipe and scaling it
-        self. image = pygame.image.load('flappy-bird-test/images/pipe-green.png').convert_alpha()
+        self.image = pygame.image.load(f'images/pipe-{color}.png').convert_alpha()
         self.image = pygame.transform.scale(self.image, (PIPE_WIDHT, PIPE_HEIGHT))
         # set rect for pipe
         self.rect = self.image.get_rect()
@@ -100,7 +100,7 @@ class Ground(pygame.sprite.Sprite):
     def __init__(self, xpos):
         pygame.sprite.Sprite.__init__(self)
         # load image and transform
-        self.image = pygame.image.load('flappy-bird-test/images/base.png').convert_alpha()
+        self.image = pygame.image.load('images/base.png').convert_alpha()
         self.image = pygame.transform.scale(self.image, (GROUND_WIDHT, GROUND_HEIGHT))
         self.mask = pygame.mask.from_surface(self.image)
         # set rect with correct position
@@ -116,21 +116,24 @@ def is_off_screen(sprite):
     # checking if the sprite/image is off the screen
     return sprite.rect[0] < -(sprite.rect[2])
 
-def get_random_pipes(xpos):
+def get_random_pipes(xpos, color):
     """
     method for creating random pipes
     returns both the pipe and inverted pipe
     """
     size = random.randint(100, 300)
     # not inverted pipe
-    pipe = Pipe(False, xpos, size)
+    pipe = Pipe(False, xpos, size, color)
     # inverted pipe
-    pipe_inverted = Pipe(True, xpos, SCREEN_HEIGHT - size - PIPE_GAP)
+    pipe_inverted = Pipe(True, xpos, SCREEN_HEIGHT - size - PIPE_GAP, color)
     return pipe, pipe_inverted
 
 class Game():
-    def __init__(self):
+    def __init__(self, bird_color, pipe_color, background):
         self.score = 0
+        self.bird_color = bird_color
+        self.pipe_color = pipe_color
+        self.background = f'images/background-{background}.png'
     
     def start(self):
         # initialize game and display
@@ -138,12 +141,12 @@ class Game():
         screen = pygame.display.set_mode((SCREEN_WIDHT, SCREEN_HEIGHT))
         pygame.display.set_caption('Flappy Bird')
         # loading and transforming background and start screen
-        BACKGROUND = pygame.image.load('flappy-bird-test/images/background-day.png')
+        BACKGROUND = pygame.image.load(self.background)
         BACKGROUND = pygame.transform.scale(BACKGROUND, (SCREEN_WIDHT, SCREEN_HEIGHT))
-        BEGIN_IMAGE = pygame.image.load('flappy-bird-test/images/message.png').convert_alpha()
+        BEGIN_IMAGE = pygame.image.load('images/message.png').convert_alpha()
         # init the bird
         bird_group = pygame.sprite.Group()
-        bird = Bird()
+        bird = Bird(self.bird_color)
         bird_group.add(bird)
         # init the ground
         ground_group = pygame.sprite.Group()
@@ -153,7 +156,7 @@ class Game():
         # init the pipes (both inverted and regular)
         pipe_group = pygame.sprite.Group()
         for i in range (2):
-            pipes = get_random_pipes(SCREEN_WIDHT * i + 800)
+            pipes = get_random_pipes(SCREEN_WIDHT * i + 800, self.pipe_color)
             pipe_group.add(pipes[0])
             pipe_group.add(pipes[1])
         # start clock
@@ -191,7 +194,7 @@ class Game():
             ground_group.draw(screen)
             # update the display
             pygame.display.update()
-        self.game(clock,screen,bird, BACKGROUND, ground_group, pipe_group, bird_group)
+        self.game(clock, screen, bird, BACKGROUND, ground_group, pipe_group, bird_group)
     
     def game(self, clock, screen, bird, BACKGROUND, ground_group, pipe_group, bird_group):
         # loop driving the game when it starts
@@ -220,7 +223,7 @@ class Game():
                 # updating score when passing a pipe
                 self.score += 1
                 # get the new pipes
-                pipes = get_random_pipes(SCREEN_WIDHT * 2)
+                pipes = get_random_pipes(SCREEN_WIDHT * 2, self.pipe_color)
                 pipe_group.add(pipes[0])
                 pipe_group.add(pipes[1])
             # updating bird, ground and pipes
@@ -241,7 +244,7 @@ class Game():
     
     def new_round(self, prev_score):
         # score text
-        font = pygame.font.Font('flappy-bird-test/FlappyFont.ttf', 50)
+        font = pygame.font.Font('FlappyFont.ttf', 50)
         string = 'Score: '
         string += str(prev_score)
         text = font.render(string, True, (255, 255, 255))
@@ -250,11 +253,11 @@ class Game():
         pygame.init()
         screen = pygame.display.set_mode((SCREEN_WIDHT, SCREEN_HEIGHT))
         pygame.display.set_caption('Flappy Bird')
-        BACKGROUND = pygame.image.load('flappy-bird-test/images/background-day.png')
+        BACKGROUND = pygame.image.load(self.background)
         BACKGROUND = pygame.transform.scale(BACKGROUND, (SCREEN_WIDHT, SCREEN_HEIGHT))
-        BEGIN_IMAGE = pygame.image.load('flappy-bird-test/images/message.png').convert_alpha()
+        BEGIN_IMAGE = pygame.image.load('images/message.png').convert_alpha()
         bird_group = pygame.sprite.Group()
-        bird = Bird()
+        bird = Bird(self.bird_color)
         bird_group.add(bird)
         ground_group = pygame.sprite.Group()
         for i in range (2):
@@ -262,7 +265,7 @@ class Game():
             ground_group.add(ground)
         pipe_group = pygame.sprite.Group()
         for i in range (2):
-            pipes = get_random_pipes(SCREEN_WIDHT * i + 800)
+            pipes = get_random_pipes(SCREEN_WIDHT * i + 800, self.pipe_color)
             pipe_group.add(pipes[0])
             pipe_group.add(pipes[1])
         clock = pygame.time.Clock()
@@ -306,6 +309,13 @@ class Game():
 
 # driver code
 if __name__ == '__main__':
+    # selecting random colors:
+    bird_colors = ['blue', 'red', 'yellow']
+    pipe_colors = ['green', 'red']
+    backgrounds = ['day', 'night']
+    bird_color = bird_colors[random.randint(0, 2)]
+    pipe_color = pipe_colors[random.randint(0, 1)]
+    background = backgrounds[random.randint(0, 1)]
     # starting game
-    game = Game()
+    game = Game(bird_color, pipe_color, background)
     game.start()
